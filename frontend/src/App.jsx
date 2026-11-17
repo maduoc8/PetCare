@@ -1,4 +1,5 @@
 import { Link, Route, Routes } from 'react-router-dom'
+import DuenosPage from './pages/DuenosPage'
 
 export default function App() {
   return (
@@ -9,7 +10,7 @@ export default function App() {
       </header>
       <main className="contenido">
         <Routes>
-          <Route path="/" element={<p>Bienvenido a PetCare.</p>} />
+          <Route path="/" element={<DuenosPage />} />
           <Route path="*" element={<p>Página no encontrada. <Link to="/">Volver al inicio</Link></p>} />
         </Routes>
       </main>
