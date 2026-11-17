@@ -1,14 +1,205 @@
 :root {
+  --fondo: #f4f7f6;
+  --superficie: #ffffff;
+  --texto: #1f2a28;
+  --texto-suave: #5b6b67;
+  --primario: #1f7a6d;
+  --primario-oscuro: #155e54;
+  --borde: #dde5e2;
+  --error: #b42318;
+  --error-fondo: #fdecea;
+  --ok: #1a7f37;
+  --ok-fondo: #e6f4ea;
   font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   line-height: 1.5;
+  color: var(--texto);
+  background: var(--fondo);
+}
+
+* {
+  box-sizing: border-box;
 }
 
 body {
   margin: 0;
 }
 
+a {
+  color: var(--primario);
+}
+
+.cabecera {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--primario);
+  color: #fff;
+}
+
+.cabecera .marca {
+  color: #fff;
+  font-size: 1.4rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.cabecera span {
+  opacity: 0.85;
+}
+
 .contenido {
   max-width: 960px;
   margin: 0 auto;
-  padding: 24px 16px;
+  padding: 24px 16px 48px;
+}
+
+h2 {
+  margin: 0 0 4px;
+}
+
+h3 {
+  margin: 0 0 12px;
+}
+
+.subtitulo {
+  margin: 0 0 20px;
+  color: var(--texto-suave);
+}
+
+.volver {
+  display: inline-block;
+  margin-bottom: 16px;
+  text-decoration: none;
+}
+
+.tabla {
+  overflow-x: auto;
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: 8px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--borde);
+  white-space: nowrap;
+}
+
+th {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--texto-suave);
+}
+
+tbody tr:last-child td {
+  border-bottom: none;
+}
+
+td.texto-largo {
+  min-width: 200px;
+  white-space: pre-line;
+}
+
+.boton {
+  display: inline-block;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 6px;
+  background: var(--primario);
+  color: #fff;
+  font: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.boton:hover {
+  background: var(--primario-oscuro);
+}
+
+.boton:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.formulario {
+  display: grid;
+  gap: 14px;
+  max-width: 520px;
+  margin-bottom: 32px;
+  padding: 20px;
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: 8px;
+}
+
+.campo {
+  display: grid;
+  gap: 4px;
+}
+
+.campo label {
+  font-weight: 600;
+}
+
+.campo input,
+.campo textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--borde);
+  border-radius: 6px;
+  font: inherit;
+}
+
+.campo textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+.campo.invalido input,
+.campo.invalido textarea {
+  border-color: var(--error);
+}
+
+.error-campo {
+  font-size: 0.9rem;
+  color: var(--error);
+}
+
+.aviso {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 6px;
+}
+
+.aviso.ok {
+  background: var(--ok-fondo);
+  color: var(--ok);
+}
+
+.aviso.error {
+  background: var(--error-fondo);
+  color: var(--error);
+}
+
+.vacio {
+  color: var(--texto-suave);
+}
+
+@media (max-width: 600px) {
+  .cabecera span {
+    display: none;
+  }
+
+  .formulario {
+    padding: 16px;
+  }
 }
