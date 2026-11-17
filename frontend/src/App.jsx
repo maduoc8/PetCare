@@ -1,5 +1,6 @@
 import { Link, Route, Routes } from 'react-router-dom'
 import DuenosPage from './pages/DuenosPage'
+import MascotasPage from './pages/MascotasPage'
 
 export default function App() {
   return (
@@ -11,6 +12,7 @@ export default function App() {
       <main className="contenido">
         <Routes>
           <Route path="/" element={<DuenosPage />} />
+          <Route path="/duenos/:id" element={<MascotasPage />} />
           <Route path="*" element={<p>Página no encontrada. <Link to="/">Volver al inicio</Link></p>} />
         </Routes>
       </main>
