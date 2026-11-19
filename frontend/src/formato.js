@@ -12,3 +12,12 @@ export function formatearFechaHora(fechaHora) {
 export function formatearPesos(monto) {
   return `$${Number(monto).toLocaleString('es-CL')}`
 }
+export function iniciales(nombre) {
+  return String(nombre ?? '')
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((parte) => parte[0] ?? '')
+    .join('')
+    .toUpperCase()
+}

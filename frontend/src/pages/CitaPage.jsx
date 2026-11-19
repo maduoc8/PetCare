@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { crearCita, eliminarCita, listarCitasDeMascota, obtenerMascota } from '../api'
+import Buscador from '../Buscador.jsx'
+import { coincide } from '../busqueda'
 import { formatearFechaHora, formatearPesos } from '../formato'
 
 const formularioVacio = { fecha: '', motivo: '', diagnostico: '', costo: '' }
@@ -37,6 +39,7 @@ export default function CitaPage() {
   const [errores, setErrores] = useState({})
   const [aviso, setAviso] = useState(null)
   const [enviando, setEnviando] = useState(false)
+  const [busqueda, setBusqueda] = useState('')
 
   useEffect(() => {
     setCargando(true)
@@ -115,19 +118,24 @@ export default function CitaPage() {
     )
   }
 
+  const visibles = citas.filter((c) => coincide(busqueda, c.motivo, c.diagnostico, formatearFechaHora(c.fecha)))
+  const total = citas.reduce((suma, c) => suma + (c.costo ?? 0), 0)
+
   return (
     <section>
       <Link to={`/duenos/${mascota.dueno.id}`} className="volver">
         ← Volver a las mascotas de {mascota.dueno.nombre}
       </Link>
 
-      <h2>Registrar cita para {mascota.nombre}</h2>
+      <h2>{mascota.nombre}</h2>
       <p className="subtitulo">
         {mascota.especie}
-        {mascota.raza ? ` · ${mascota.raza}` : ''}
+        {mascota.raza ? ` · ${mascota.raza}` : ''} · Dueño: {mascota.dueno.nombre}
       </p>
 
       <form className="formulario" onSubmit={enviar} noValidate>
+        <h3>Registrar cita</h3>
+
         <Campo etiqueta="Fecha y hora" nombre="fecha" error={errores.fecha}>
           <input id="fecha" name="fecha" type="datetime-local" value={form.fecha} onChange={cambiar} />
         </Campo>
@@ -154,14 +162,33 @@ export default function CitaPage() {
 
         {aviso && <p className={`aviso ${aviso.tipo}`}>{aviso.texto}</p>}
 
-        <button type="submit" className="boton" disabled={enviando}>
-          {enviando ? 'Guardando...' : 'Registrar cita'}
-        </button>
+        <div className="acciones">
+          <button type="submit" className="boton" disabled={enviando}>
+            {enviando ? 'Guardando...' : 'Registrar cita'}
+          </button>
+        </div>
       </form>
 
-      <h3>Citas de {mascota.nombre}</h3>
+      <div className="seccion-titulo">
+        <h3>Historial de citas</h3>
+        {citas.length > 0 && (
+          <span className="resultados">
+            {citas.length} {citas.length === 1 ? 'cita' : 'citas'} · total {formatearPesos(total)}
+          </span>
+        )}
+      </div>
+      {citas.length > 0 && (
+        <div className="barra">
+          <Buscador valor={busqueda} onCambio={setBusqueda} placeholder="Buscar por motivo, diagnóstico o fecha..." />
+          {busqueda.trim() && (
+            <span className="resultados">{visibles.length} de {citas.length}</span>
+          )}
+        </div>
+      )}
       {citas.length === 0 ? (
         <p className="vacio">Esta mascota no tiene citas registradas.</p>
+      ) : visibles.length === 0 ? (
+        <p className="vacio">Ninguna cita coincide con la búsqueda.</p>
       ) : (
         <div className="tabla">
           <table>
@@ -171,17 +198,17 @@ export default function CitaPage() {
                 <th>Motivo</th>
                 <th>Diagnóstico</th>
                 <th>Costo</th>
-                <th></th>
+                <th className="col-acciones"></th>
               </tr>
             </thead>
             <tbody>
-              {citas.map((cita) => (
+              {visibles.map((cita) => (
                 <tr key={cita.id}>
                   <td>{formatearFechaHora(cita.fecha)}</td>
                   <td className="texto-largo">{cita.motivo}</td>
-                  <td className="texto-largo">{cita.diagnostico || '—'}</td>
-                  <td>{formatearPesos(cita.costo)}</td>
-                  <td>
+                  <td className="texto-largo suave">{cita.diagnostico || '—'}</td>
+                  <td className="monto">{formatearPesos(cita.costo)}</td>
+                  <td className="col-acciones">
                     <button type="button" className="boton peligro pequeno" onClick={() => eliminar(cita)}>
                       Eliminar
                     </button>

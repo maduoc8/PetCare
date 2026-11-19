@@ -7,8 +7,10 @@ import {
   listarMascotasDeDueno,
   obtenerDueno,
 } from '../api'
+import Buscador from '../Buscador.jsx'
 import Campo from '../Campo.jsx'
-import { formatearFecha } from '../formato'
+import { coincide } from '../busqueda'
+import { formatearFecha, iniciales } from '../formato'
 import { validarMascota } from '../validaciones'
 
 const formularioVacio = { nombre: '', especie: '', raza: '', fechaNacimiento: '' }
@@ -20,6 +22,7 @@ export default function MascotasPage() {
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState('')
   const [aviso, setAviso] = useState(null)
+  const [busqueda, setBusqueda] = useState('')
 
   const [formAbierto, setFormAbierto] = useState(false)
   const [editandoId, setEditandoId] = useState(null)
@@ -135,17 +138,23 @@ export default function MascotasPage() {
   }
 
   const hoy = new Date().toISOString().slice(0, 10)
+  const visibles = mascotas.filter((m) => coincide(busqueda, m.nombre, m.especie, m.raza))
 
   return (
       <section>
         <Link to="/" className="volver">← Volver a dueños</Link>
 
         <div className="encabezado">
-          <div>
-            <h2>Mascotas de {dueno.nombre}</h2>
-            <p className="subtitulo">
-              {dueno.telefono} · {dueno.email}
-            </p>
+          <div className="perfil">
+            <span className="avatar grande" aria-hidden="true">{iniciales(dueno.nombre)}</span>
+            <div>
+              <h2>
+                Mascotas de {dueno.nombre} <span className="contador">{mascotas.length}</span>
+              </h2>
+              <p className="subtitulo">
+                {dueno.rut} · {dueno.telefono} · {dueno.email}
+              </p>
+            </div>
           </div>
           {!formAbierto && (
               <button type="button" className="boton" onClick={abrirNueva}>
@@ -184,8 +193,22 @@ export default function MascotasPage() {
             </form>
         )}
 
+        {mascotas.length > 0 && (
+            <div className="barra">
+              <Buscador
+                  valor={busqueda}
+                  onCambio={setBusqueda}
+                  placeholder="Buscar por nombre, especie o raza..."
+              />
+              {busqueda.trim() && (
+                  <span className="resultados">{visibles.length} de {mascotas.length}</span>
+              )}
+            </div>
+        )}
         {mascotas.length === 0 ? (
             <p className="vacio">Este dueño no tiene mascotas registradas.</p>
+        ) : visibles.length === 0 ? (
+            <p className="vacio">Ninguna mascota coincide con la búsqueda.</p>
         ) : (
             <div className="tabla">
               <table>
@@ -195,17 +218,17 @@ export default function MascotasPage() {
                   <th>Especie</th>
                   <th>Raza</th>
                   <th>Nacimiento</th>
-                  <th></th>
+                  <th className="col-acciones"></th>
                 </tr>
                 </thead>
                 <tbody>
-                {mascotas.map((mascota) => (
+                {visibles.map((mascota) => (
                     <tr key={mascota.id}>
-                      <td>{mascota.nombre}</td>
+                      <td className="persona-nombre">{mascota.nombre}</td>
                       <td><span className="insignia">{mascota.especie}</span></td>
-                      <td>{mascota.raza || '—'}</td>
-                      <td>{formatearFecha(mascota.fechaNacimiento)}</td>
-                      <td>
+                      <td className="suave">{mascota.raza || '—'}</td>
+                      <td className="suave">{formatearFecha(mascota.fechaNacimiento)}</td>
+                      <td className="col-acciones">
                         <div className="acciones">
                           <Link to={`/mascotas/${mascota.id}/cita`} className="boton pequeno">
                             Citas

@@ -55,6 +55,7 @@ export const actualizarDueno = (id, datos) => enviarJson('PUT', `/api/duenos/${i
 export const eliminarDueno = (id) => pedir(`/api/duenos/${id}`, { method: 'DELETE' })
 
 // Mascotas
+export const listarMascotas = () => pedir('/api/mascotas')
 const cuerpoMascota = ({ nombre, especie, raza, fechaNacimiento, duenoId }) => ({
   nombre,
   especie,

@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { actualizarDueno, crearDueno, eliminarDueno, listarDuenos } from '../api'
+import Buscador from '../Buscador.jsx'
 import Campo from '../Campo.jsx'
+import { coincide, coincideRut } from '../busqueda'
+import { iniciales } from '../formato'
 import { validarDueno } from '../validaciones'
 
 const formularioVacio = { rut: '', nombre: '', telefono: '', email: '' }
@@ -112,16 +115,15 @@ export default function DuenosPage() {
   if (cargando) return <p className="cargando">Cargando dueños...</p>
   if (error) return <p className="aviso error">{error}</p>
 
-  const texto = busqueda.trim().toLowerCase()
   const visibles = duenos.filter(
-      (d) => d.nombre.toLowerCase().includes(texto) || d.rut.toLowerCase().includes(texto),
+      (d) => coincide(busqueda, d.nombre, d.email, d.telefono) || coincideRut(busqueda, d.rut),
   )
 
   return (
       <section>
         <div className="encabezado">
           <div>
-            <h2>Dueños</h2>
+            <h2>Dueños <span className="contador">{duenos.length}</span></h2>
             <p className="subtitulo">Elige un dueño para ver sus mascotas.</p>
           </div>
           {!formAbierto && (
@@ -162,13 +164,16 @@ export default function DuenosPage() {
         )}
 
         {duenos.length > 0 && (
-            <input
-                className="buscador"
-                type="search"
-                placeholder="Buscar por nombre o RUT..."
-                value={busqueda}
-                onChange={(e) => setBusqueda(e.target.value)}
-            />
+            <div className="barra">
+              <Buscador
+                  valor={busqueda}
+                  onCambio={setBusqueda}
+                  placeholder="Buscar por nombre, RUT, email o teléfono..."
+              />
+              {busqueda.trim() && (
+                  <span className="resultados">{visibles.length} de {duenos.length}</span>
+              )}
+            </div>
         )}
 
         {duenos.length === 0 ? (
@@ -184,17 +189,22 @@ export default function DuenosPage() {
                   <th>RUT</th>
                   <th>Teléfono</th>
                   <th>Email</th>
-                  <th></th>
+                  <th className="col-acciones"></th>
                 </tr>
                 </thead>
                 <tbody>
                 {visibles.map((dueno) => (
                     <tr key={dueno.id}>
-                      <td>{dueno.nombre}</td>
-                      <td>{dueno.rut}</td>
-                      <td>{dueno.telefono}</td>
-                      <td>{dueno.email}</td>
                       <td>
+                        <div className="persona">
+                          <span className="avatar" aria-hidden="true">{iniciales(dueno.nombre)}</span>
+                          <span className="persona-nombre">{dueno.nombre}</span>
+                        </div>
+                      </td>
+                      <td>{dueno.rut}</td>
+                      <td className="suave">{dueno.telefono}</td>
+                      <td className="suave">{dueno.email}</td>
+                      <td className="col-acciones">
                         <div className="acciones">
                           <Link to={`/duenos/${dueno.id}`} className="boton pequeno">Ver mascotas</Link>
                           <button type="button" className="boton secundario pequeno" onClick={() => abrirEditar(dueno)}>
