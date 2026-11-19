@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { crearCita, listarCitasDeMascota, obtenerMascota } from '../api'
+import { crearCita, eliminarCita, listarCitasDeMascota, obtenerMascota } from '../api'
 import { formatearFechaHora, formatearPesos } from '../formato'
 
 const formularioVacio = { fecha: '', motivo: '', diagnostico: '', costo: '' }
@@ -92,6 +92,17 @@ export default function CitaPage() {
       .catch(() => {})
       .finally(() => setEnviando(false))
   }
+  async function eliminar(cita) {
+    if (!window.confirm('¿Eliminar esta cita? Esta acción no se puede deshacer.')) return
+    setAviso(null)
+    try {
+      await eliminarCita(cita.id)
+      setCitas((actuales) => actuales.filter((c) => c.id !== cita.id))
+      setAviso({ tipo: 'ok', texto: 'Cita eliminada.' })
+    } catch (err) {
+      setAviso({ tipo: 'error', texto: err.message })
+    }
+  }
 
   if (cargando) return <p>Cargando mascota...</p>
 
@@ -160,6 +171,7 @@ export default function CitaPage() {
                 <th>Motivo</th>
                 <th>Diagnóstico</th>
                 <th>Costo</th>
+                <th></th>
               </tr>
             </thead>
             <tbody>
@@ -169,6 +181,11 @@ export default function CitaPage() {
                   <td className="texto-largo">{cita.motivo}</td>
                   <td className="texto-largo">{cita.diagnostico || '—'}</td>
                   <td>{formatearPesos(cita.costo)}</td>
+                  <td>
+                    <button type="button" className="boton peligro pequeno" onClick={() => eliminar(cita)}>
+                      Eliminar
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>

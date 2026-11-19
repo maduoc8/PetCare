@@ -43,3 +43,29 @@ export function crearCita({ fecha, motivo, diagnostico, costo, mascotaId }) {
     body: JSON.stringify({ fecha, motivo, diagnostico, costo, mascota: { id: mascotaId } }),
   })
 }
+
+const CABECERAS_JSON = { 'Content-Type': 'application/json' }
+
+const enviarJson = (metodo, ruta, cuerpo) =>
+    pedir(ruta, { method: metodo, headers: CABECERAS_JSON, body: JSON.stringify(cuerpo) })
+
+// Dueños
+export const crearDueno = (datos) => enviarJson('POST', '/api/duenos', datos)
+export const actualizarDueno = (id, datos) => enviarJson('PUT', `/api/duenos/${id}`, datos)
+export const eliminarDueno = (id) => pedir(`/api/duenos/${id}`, { method: 'DELETE' })
+
+// Mascotas
+const cuerpoMascota = ({ nombre, especie, raza, fechaNacimiento, duenoId }) => ({
+  nombre,
+  especie,
+  raza: raza || null,
+  fechaNacimiento: fechaNacimiento || null,
+  dueno: { id: duenoId },
+})
+export const crearMascota = (datos) => enviarJson('POST', '/api/mascotas', cuerpoMascota(datos))
+export const actualizarMascota = (id, datos) =>
+    enviarJson('PUT', `/api/mascotas/${id}`, cuerpoMascota(datos))
+export const eliminarMascota = (id) => pedir(`/api/mascotas/${id}`, { method: 'DELETE' })
+
+// Citas
+export const eliminarCita = (id) => pedir(`/api/citas/${id}`, { method: 'DELETE' })

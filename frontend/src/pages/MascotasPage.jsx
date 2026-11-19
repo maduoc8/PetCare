@@ -1,7 +1,17 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { listarMascotasDeDueno, obtenerDueno } from '../api'
+import {
+  actualizarMascota,
+  crearMascota,
+  eliminarMascota,
+  listarMascotasDeDueno,
+  obtenerDueno,
+} from '../api'
+import Campo from '../Campo.jsx'
 import { formatearFecha } from '../formato'
+import { validarMascota } from '../validaciones'
+
+const formularioVacio = { nombre: '', especie: '', raza: '', fechaNacimiento: '' }
 
 export default function MascotasPage() {
   const { id } = useParams()
@@ -9,68 +19,211 @@ export default function MascotasPage() {
   const [mascotas, setMascotas] = useState([])
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState('')
+  const [aviso, setAviso] = useState(null)
+
+  const [formAbierto, setFormAbierto] = useState(false)
+  const [editandoId, setEditandoId] = useState(null)
+  const [form, setForm] = useState(formularioVacio)
+  const [errores, setErrores] = useState({})
+  const [enviando, setEnviando] = useState(false)
+
+  function cargar() {
+    setError('')
+    return Promise.all([obtenerDueno(id), listarMascotasDeDueno(id)])
+        .then(([datosDueno, datosMascotas]) => {
+          setDueno(datosDueno)
+          setMascotas(datosMascotas)
+        })
+        .catch((e) => setError(e.message))
+        .finally(() => setCargando(false))
+  }
 
   useEffect(() => {
     setCargando(true)
-    setError('')
-    Promise.all([obtenerDueno(id), listarMascotasDeDueno(id)])
-      .then(([datosDueno, datosMascotas]) => {
-        setDueno(datosDueno)
-        setMascotas(datosMascotas)
-      })
-      .catch((e) => setError(e.message))
-      .finally(() => setCargando(false))
+    cargar()
   }, [id])
 
-  if (cargando) return <p>Cargando mascotas...</p>
+  function abrirNueva() {
+    setEditandoId(null)
+    setForm(formularioVacio)
+    setErrores({})
+    setAviso(null)
+    setFormAbierto(true)
+  }
+
+  function abrirEditar(mascota) {
+    setEditandoId(mascota.id)
+    setForm({
+      nombre: mascota.nombre,
+      especie: mascota.especie,
+      raza: mascota.raza ?? '',
+      fechaNacimiento: mascota.fechaNacimiento ?? '',
+    })
+    setErrores({})
+    setAviso(null)
+    setFormAbierto(true)
+  }
+
+  function cerrarFormulario() {
+    setFormAbierto(false)
+    setEditandoId(null)
+    setForm(formularioVacio)
+    setErrores({})
+  }
+
+  function cambiar(e) {
+    const { name, value } = e.target
+    setForm((actual) => ({ ...actual, [name]: value }))
+  }
+
+  async function enviar(e) {
+    e.preventDefault()
+    setAviso(null)
+
+    const erroresLocales = validarMascota(form)
+    if (Object.keys(erroresLocales).length > 0) {
+      setErrores(erroresLocales)
+      return
+    }
+
+    const esEdicion = editandoId !== null
+    const datos = {
+      nombre: form.nombre.trim(),
+      especie: form.especie.trim(),
+      raza: form.raza.trim(),
+      fechaNacimiento: form.fechaNacimiento,
+      duenoId: Number(id),
+    }
+
+    setEnviando(true)
+    setErrores({})
+    try {
+      if (esEdicion) await actualizarMascota(editandoId, datos)
+      else await crearMascota(datos)
+      cerrarFormulario()
+      setAviso({ tipo: 'ok', texto: esEdicion ? 'Mascota actualizada.' : 'Mascota registrada.' })
+      await cargar()
+    } catch (err) {
+      setErrores(err.errores ?? {})
+      setAviso({ tipo: 'error', texto: err.message })
+    } finally {
+      setEnviando(false)
+    }
+  }
+
+  async function eliminar(mascota) {
+    if (!window.confirm(`¿Eliminar a ${mascota.nombre}? Esta acción no se puede deshacer.`)) return
+    setAviso(null)
+    try {
+      await eliminarMascota(mascota.id)
+      setAviso({ tipo: 'ok', texto: 'Mascota eliminada.' })
+      await cargar()
+    } catch (err) {
+      setAviso({ tipo: 'error', texto: err.message })
+    }
+  }
+
+  if (cargando) return <p className="cargando">Cargando mascotas...</p>
+
+  if (error) {
+    return (
+        <section>
+          <Link to="/" className="volver">← Volver a dueños</Link>
+          <p className="aviso error">{error}</p>
+        </section>
+    )
+  }
+
+  const hoy = new Date().toISOString().slice(0, 10)
 
   return (
-    <section>
-      <Link to="/" className="volver">← Volver a dueños</Link>
+      <section>
+        <Link to="/" className="volver">← Volver a dueños</Link>
 
-      {error ? (
-        <p className="aviso error">{error}</p>
-      ) : (
-        <>
-          <h2>Mascotas de {dueno.nombre}</h2>
-          <p className="subtitulo">
-            {dueno.telefono} · {dueno.email}
-          </p>
+        <div className="encabezado">
+          <div>
+            <h2>Mascotas de {dueno.nombre}</h2>
+            <p className="subtitulo">
+              {dueno.telefono} · {dueno.email}
+            </p>
+          </div>
+          {!formAbierto && (
+              <button type="button" className="boton" onClick={abrirNueva}>
+                + Nueva mascota
+              </button>
+          )}
+        </div>
 
-          {mascotas.length === 0 ? (
+        {aviso && <p className={`aviso ${aviso.tipo} separado`}>{aviso.texto}</p>}
+
+        {formAbierto && (
+            <form className="formulario" onSubmit={enviar} noValidate>
+              <h3>{editandoId ? 'Editar mascota' : 'Nueva mascota'}</h3>
+
+              <Campo etiqueta="Nombre" nombre="nombre" error={errores.nombre}>
+                <input id="nombre" name="nombre" type="text" maxLength={60} value={form.nombre} onChange={cambiar} />
+              </Campo>
+              <Campo etiqueta="Especie" nombre="especie" error={errores.especie}>
+                <input id="especie" name="especie" type="text" maxLength={40} placeholder="Perro, gato..." value={form.especie} onChange={cambiar} />
+              </Campo>
+              <Campo etiqueta="Raza (opcional)" nombre="raza" error={errores.raza}>
+                <input id="raza" name="raza" type="text" maxLength={60} value={form.raza} onChange={cambiar} />
+              </Campo>
+              <Campo etiqueta="Fecha de nacimiento (opcional)" nombre="fechaNacimiento" error={errores.fechaNacimiento}>
+                <input id="fechaNacimiento" name="fechaNacimiento" type="date" max={hoy} value={form.fechaNacimiento} onChange={cambiar} />
+              </Campo>
+
+              <div className="acciones">
+                <button type="submit" className="boton" disabled={enviando}>
+                  {enviando ? 'Guardando...' : 'Guardar'}
+                </button>
+                <button type="button" className="boton secundario" onClick={cerrarFormulario}>
+                  Cancelar
+                </button>
+              </div>
+            </form>
+        )}
+
+        {mascotas.length === 0 ? (
             <p className="vacio">Este dueño no tiene mascotas registradas.</p>
-          ) : (
+        ) : (
             <div className="tabla">
               <table>
                 <thead>
-                  <tr>
-                    <th>Nombre</th>
-                    <th>Especie</th>
-                    <th>Raza</th>
-                    <th>Nacimiento</th>
-                    <th></th>
-                  </tr>
+                <tr>
+                  <th>Nombre</th>
+                  <th>Especie</th>
+                  <th>Raza</th>
+                  <th>Nacimiento</th>
+                  <th></th>
+                </tr>
                 </thead>
                 <tbody>
-                  {mascotas.map((mascota) => (
+                {mascotas.map((mascota) => (
                     <tr key={mascota.id}>
                       <td>{mascota.nombre}</td>
-                      <td>{mascota.especie}</td>
+                      <td><span className="insignia">{mascota.especie}</span></td>
                       <td>{mascota.raza || '—'}</td>
                       <td>{formatearFecha(mascota.fechaNacimiento)}</td>
                       <td>
-                        <Link to={`/mascotas/${mascota.id}/cita`} className="boton">
-                          Registrar cita
-                        </Link>
+                        <div className="acciones">
+                          <Link to={`/mascotas/${mascota.id}/cita`} className="boton pequeno">
+                            Citas
+                          </Link>
+                          <button type="button" className="boton secundario pequeno" onClick={() => abrirEditar(mascota)}>
+                            Editar
+                          </button>
+                          <button type="button" className="boton peligro pequeno" onClick={() => eliminar(mascota)}>
+                            Eliminar
+                          </button>
+                        </div>
                       </td>
                     </tr>
-                  ))}
+                ))}
                 </tbody>
               </table>
             </div>
-          )}
-        </>
-      )}
-    </section>
+        )}
+      </section>
   )
 }
